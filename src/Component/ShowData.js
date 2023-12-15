@@ -80,7 +80,6 @@ const ShowData = () => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     const elements = Array.from(doc.body.childNodes);
-
     const renderElements = elements.map((element, index) => {
       if (element.nodeName === 'P') {
         return <p key={index} style={{ margin: '10px 0' }}>{element.textContent}</p>;

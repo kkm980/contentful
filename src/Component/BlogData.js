@@ -5,8 +5,8 @@ import { documentToHtmlString } from '@contentful/rich-text-html-renderer';
 import { createClient } from "contentful";
 const BlogData = () => {
   const [filteredData, setFilteredData] = useState([]);
-  const [cryptoArray, setCryptoArray] = useState([]);
-  const [faqArray, setFaqArray] = useState([]);
+  const [descriptionOne, setDescriptionOne] = useState([]);
+  const [descriptionTwo, setDescriptionTwo] = useState([]);
   const { id, href } = useParams();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,31 +43,29 @@ const BlogData = () => {
 
   useEffect(() => {
     const updateArrays = () => {
-      const newCryptoArray = [];
-      const newFaqArray = [];
-
+      const newDesOne = [];
+      const newDesTwo = [];
       for (const key in filteredData?.fields) {
-        if (key.startsWith("cryptoQuestion")) {
+        if (key.startsWith("descriptionOne")) {
           const questionKey = key;
-          const answerKey = key.replace("cryptoQuestion", "cryptoAnswer");
-          const question = filteredData?.fields[questionKey];
-          const answer = documentToHtmlString(filteredData?.fields[answerKey]);
-          newCryptoArray.push({ question, answer });
-        } else if (key.startsWith("faqQuestion")) {
+          // const answerKey = key.replace("cryptoQuestion", "cryptoAnswer");
+          // const question = filteredData?.fields[questionKey];
+          const answer = documentToHtmlString(filteredData?.fields[key]);
+          newDesOne.push({ answer });
+        } else if (key.startsWith("descriptionTwo")) {
           const questionKey = key;
-          const answerKey = key.replace("faqQuestion", "faqAnswer");
-          const question = filteredData?.fields[questionKey];
-          const answer = documentToHtmlString(filteredData?.fields[answerKey]);
-          newFaqArray.push({ question, answer });
+          // const answerKey = key.replace("faqQuestion", "faqAnswer");
+          // const question = filteredData?.fields[questionKey];
+          const answer = documentToHtmlString(filteredData?.fields[key]);
+          newDesTwo.push({ answer });
         }
       }
 
-      setCryptoArray(newCryptoArray);
-      setFaqArray(newFaqArray);
+      setDescriptionOne(newDesOne);
+      setDescriptionTwo(newDesTwo);
     };
 
     updateArrays();
-    console.log(filteredData, "filteredData");
   }, [filteredData]);
 
   function convertHtmlToText(html) {
@@ -80,10 +78,21 @@ const BlogData = () => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     const elements = Array.from(doc.body.childNodes);
-
+    console.log(elements, "el");
     const renderElements = elements.map((element, index) => {
       if (element.nodeName === 'P') {
+        const regex = /<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/;
+
+        // Check if the variable contains an <a> tag
+         const match = element.innerHTML.match(regex);
+
+       if (match) {
+       const hrefValue = match[2];
+       return <a key={index} style={{ margin: '10px 0' }} href={hrefValue} target="_blank">{element.textContent}</a>;
+       } else{
         return <p key={index} style={{ margin: '10px 0' }}>{element.textContent}</p>;
+       }
+        
       } else if (element.nodeName === 'UL') {
         const listItems = Array.from(element.querySelectorAll('li'));
         return (
@@ -92,6 +101,24 @@ const BlogData = () => {
               <li key={listIndex}>{listItem.textContent}</li>
             ))}
           </ul>
+        );
+      }
+      else if (element.nodeName === 'OL') {
+        const listItems = Array.from(element.querySelectorAll('li'));
+        return (
+          <ol key={index} style={{ listStyleType: 'number', margin: '0 auto' }}>
+            {listItems.map((listItem, listIndex) => (
+              <li key={listIndex}>{listItem.textContent}</li>
+            ))}
+          </ol>
+        );
+      }
+      else if (element.nodeName === 'BLOCKQUOTE') {
+        return <p key={index} style={{ margin: '10px 0',borderLeft: '5px solid blue', minHeight:"10px", paddingLeft:"5px" }}>{element.textContent}</p>;
+      } 
+      else if (element.nodeName === 'HR') {
+        return (
+          <hr/>
         );
       }
       return null;
@@ -112,7 +139,14 @@ const BlogData = () => {
            
             <div className={styles.heroSectionWrapper}>
               <h3 style={{marginBottom:"20px"}}>{filteredData?.fields?.heroTitle}</h3>
-              <p>{filteredData?.fields?.description}</p>
+              {
+                  descriptionOne?.map((item, index) => (
+                    <div key={index} className={styles.cardStyle}>
+                      <h4>{item?.question}</h4>
+                      <p>{convertHtmlToText(item?.answer)}</p>
+                    </div>
+                  ))
+                }
             </div>
 
              <div className={styles.heroImageWrapper}>
@@ -121,7 +155,14 @@ const BlogData = () => {
             </div>
 
             <div className={styles.nextWrapper}>
-              <div className={styles.descriptionText}>{filteredData?.fields?.descriptionText}</div>
+            {
+                  descriptionTwo?.map((item, index) => (
+                    <div key={index} className={styles.cardStyle}>
+                      <h4>{item?.question}</h4>
+                      <p>{convertHtmlToTextWithBreaks(item?.answer)}</p>
+                    </div>
+                  ))
+                }
               <div style={{marginTop:"10px", textAlign:"right", color:"blue", fontWeight:"bold"}}>- {id.split("-")[0]}</div>
               <div style={{height: "100px"}}>
               </div>
